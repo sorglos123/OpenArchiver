@@ -30,23 +30,14 @@ export class ImapConnector implements IEmailConnector {
 	}
 
 	private createClient(): ImapFlow {
-		// Determine authentication method
-		let auth: any;
-		
-		if (this.credentials.useOAuth && this.credentials.oauthTokenId) {
-			// OAuth2 authentication will be handled separately
-			// For now, we'll use a placeholder - the actual token will be injected before connecting
-			auth = {
-				user: this.credentials.username,
-				accessToken: '', // Will be set before connection
-			};
-		} else {
-			// Traditional username/password authentication
-			auth = {
-				user: this.credentials.username,
-				pass: this.credentials.password,
-			};
-		}
+		// For OAuth authentication, this creates a placeholder client
+		// The actual client with OAuth token will be created in the connect() method
+		const auth: any = this.credentials.useOAuth
+			? { user: this.credentials.username }
+			: {
+					user: this.credentials.username,
+					pass: this.credentials.password,
+			  };
 
 		const client = new ImapFlow({
 			host: this.credentials.host,
@@ -114,6 +105,10 @@ export class ImapConnector implements IEmailConnector {
 
 		// If using OAuth, get the access token and update the client
 		if (this.credentials.useOAuth) {
+			if (!this.oauthService) {
+				throw new Error('OAuth service not initialized');
+			}
+
 			const accessToken = await this.getOAuthAccessToken();
 			if (!accessToken) {
 				throw new Error('Failed to obtain OAuth access token');

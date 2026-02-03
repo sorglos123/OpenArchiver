@@ -121,7 +121,7 @@ Open Archiver supports OAuth2 authentication for seamless and secure connection 
 1. **Register your application** at [Azure Portal](https://portal.azure.com/):
    - Navigate to "Azure Active Directory" → "App registrations" → "New registration"
    - Set a name for your application
-   - Set the redirect URI to: `http://localhost:3000/auth/outlook/callback` (or your domain)
+   - Set the redirect URI to: `http://localhost:4000/api/v1/auth/outlook/callback` (or your domain with the correct backend port and path)
    - Note the **Application (client) ID**
 
 2. **Configure API permissions**:
@@ -138,8 +138,9 @@ Open Archiver supports OAuth2 authentication for seamless and secure connection 
 3. **Update your `.env` file**:
    ```bash
    MS_CLIENT_ID=your-application-client-id
-   MS_REDIRECT_URI=http://localhost:3000/auth/outlook/callback
+   MS_REDIRECT_URI=http://localhost:4000/api/v1/auth/outlook/callback
    ```
+   Note: The redirect URI must match exactly what you configured in Azure Portal, including the full path `/api/v1/auth/outlook/callback`.
 
 4. **Connect your account**:
    - Navigate to "Settings" → "OAuth Accounts" in the Open Archiver dashboard

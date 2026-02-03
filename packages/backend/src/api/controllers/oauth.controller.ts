@@ -76,19 +76,21 @@ export class OAuthController {
 		try {
 			const { code, state, error, error_description } = req.query;
 
+			const appUrl = process.env.APP_URL || 'http://localhost:3000';
+
 			// Check for OAuth errors
 			if (error) {
 				logger.error({ error, error_description }, 'OAuth callback error');
 				// Redirect to frontend with error
 				return res.redirect(
-					`${process.env.APP_URL}/dashboard/settings/oauth-accounts?error=${encodeURIComponent(error_description || error)}`
+					`${appUrl}/dashboard/settings/oauth-accounts?error=${encodeURIComponent(error_description || error)}`
 				);
 			}
 
 			// Validate required parameters
 			if (!code || !state || typeof code !== 'string' || typeof state !== 'string') {
 				return res.redirect(
-					`${process.env.APP_URL}/dashboard/settings/oauth-accounts?error=Invalid+callback+parameters`
+					`${appUrl}/dashboard/settings/oauth-accounts?error=Invalid+callback+parameters`
 				);
 			}
 
@@ -96,7 +98,7 @@ export class OAuthController {
 			const pkceSession = pkceSessionStore.get(state);
 			if (!pkceSession) {
 				return res.redirect(
-					`${process.env.APP_URL}/dashboard/settings/oauth-accounts?error=Invalid+or+expired+state+parameter`
+					`${appUrl}/dashboard/settings/oauth-accounts?error=Invalid+or+expired+state+parameter`
 				);
 			}
 
@@ -106,7 +108,7 @@ export class OAuthController {
 			// Ensure user is authenticated
 			if (!req.user?.id) {
 				return res.redirect(
-					`${process.env.APP_URL}/dashboard/settings/oauth-accounts?error=Unauthorized`
+					`${appUrl}/dashboard/settings/oauth-accounts?error=Unauthorized`
 				);
 			}
 
@@ -135,12 +137,13 @@ export class OAuthController {
 
 			// Redirect back to frontend with success
 			res.redirect(
-				`${process.env.APP_URL}/dashboard/settings/oauth-accounts?success=true&email=${encodeURIComponent(userEmail)}`
+				`${appUrl}/dashboard/settings/oauth-accounts?success=true&email=${encodeURIComponent(userEmail)}`
 			);
 		} catch (error: any) {
 			logger.error({ error }, 'Failed to handle OAuth callback');
+			const appUrl = process.env.APP_URL || 'http://localhost:3000';
 			res.redirect(
-				`${process.env.APP_URL}/dashboard/settings/oauth-accounts?error=${encodeURIComponent(error.message || 'Failed to complete OAuth authentication')}`
+				`${appUrl}/dashboard/settings/oauth-accounts?error=${encodeURIComponent(error.message || 'Failed to complete OAuth authentication')}`
 			);
 		}
 	};
