@@ -11,17 +11,43 @@ import { simpleParser, ParsedMail, Attachment, AddressObject, Headers } from 'ma
 import { config } from '../../config';
 import { logger } from '../../config/logger';
 import { getThreadId } from './helpers/utils';
+import { OAuthService } from '../OAuthService';
+import { db } from '../../database';
+import { oauthTokens } from '../../database/schema';
+import { eq } from 'drizzle-orm';
 
 export class ImapConnector implements IEmailConnector {
 	private client: ImapFlow;
 	private newMaxUids: { [mailboxPath: string]: number } = {};
 	private statusMessage: string | undefined;
+	private oauthService?: OAuthService;
 
 	constructor(private credentials: GenericImapCredentials) {
 		this.client = this.createClient();
+		if (this.credentials.useOAuth) {
+			this.oauthService = new OAuthService();
+		}
 	}
 
 	private createClient(): ImapFlow {
+		// Determine authentication method
+		let auth: any;
+		
+		if (this.credentials.useOAuth && this.credentials.oauthTokenId) {
+			// OAuth2 authentication will be handled separately
+			// For now, we'll use a placeholder - the actual token will be injected before connecting
+			auth = {
+				user: this.credentials.username,
+				accessToken: '', // Will be set before connection
+			};
+		} else {
+			// Traditional username/password authentication
+			auth = {
+				user: this.credentials.username,
+				pass: this.credentials.password,
+			};
+		}
+
 		const client = new ImapFlow({
 			host: this.credentials.host,
 			port: this.credentials.port,
@@ -30,10 +56,7 @@ export class ImapConnector implements IEmailConnector {
 				rejectUnauthorized: this.credentials.allowInsecureCert,
 				requestCert: true,
 			},
-			auth: {
-				user: this.credentials.username,
-				pass: this.credentials.password,
-			},
+			auth,
 			logger: logger.child({ module: 'ImapFlow' }),
 		});
 
@@ -46,6 +69,41 @@ export class ImapConnector implements IEmailConnector {
 	}
 
 	/**
+	 * Get OAuth access token if using OAuth authentication
+	 */
+	private async getOAuthAccessToken(): Promise<string | null> {
+		if (!this.credentials.useOAuth || !this.credentials.oauthTokenId) {
+			return null;
+		}
+
+		try {
+			// Fetch token from database
+			const [token] = await db
+				.select()
+				.from(oauthTokens)
+				.where(eq(oauthTokens.id, this.credentials.oauthTokenId))
+				.limit(1);
+
+			if (!token) {
+				logger.error({ tokenId: this.credentials.oauthTokenId }, 'OAuth token not found');
+				return null;
+			}
+
+			// Check if token is expired and refresh if needed
+			if (token.expiresAt && token.expiresAt < new Date()) {
+				logger.info({ tokenId: token.id }, 'Token expired, refreshing...');
+				const refreshedToken = await this.oauthService!.refreshToken(token.id);
+				return this.oauthService!.getDecryptedAccessToken(refreshedToken);
+			}
+
+			return this.oauthService!.getDecryptedAccessToken(token);
+		} catch (error) {
+			logger.error({ error }, 'Failed to get OAuth access token');
+			return null;
+		}
+	}
+
+	/**
 	 * Establishes a connection to the IMAP server if not already connected.
 	 */
 	private async connect(): Promise<void> {
@@ -54,8 +112,36 @@ export class ImapConnector implements IEmailConnector {
 			return;
 		}
 
-		// If the client is not usable (e.g., after a logout or an error), create a new one.
-		this.client = this.createClient();
+		// If using OAuth, get the access token and update the client
+		if (this.credentials.useOAuth) {
+			const accessToken = await this.getOAuthAccessToken();
+			if (!accessToken) {
+				throw new Error('Failed to obtain OAuth access token');
+			}
+
+			// Create a new client with the OAuth token
+			this.client = new ImapFlow({
+				host: this.credentials.host,
+				port: this.credentials.port,
+				secure: this.credentials.secure,
+				tls: {
+					rejectUnauthorized: this.credentials.allowInsecureCert,
+					requestCert: true,
+				},
+				auth: {
+					user: this.credentials.username,
+					accessToken,
+				},
+				logger: logger.child({ module: 'ImapFlow' }),
+			});
+
+			this.client.on('error', (err) => {
+				logger.error({ err }, 'IMAP client error');
+			});
+		} else {
+			// If the client is not usable (e.g., after a logout or an error), create a new one.
+			this.client = this.createClient();
+		}
 
 		try {
 			await this.client.connect();

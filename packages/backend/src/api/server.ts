@@ -7,6 +7,7 @@ import { ArchivedEmailController } from './controllers/archived-email.controller
 import { StorageController } from './controllers/storage.controller';
 import { SearchController } from './controllers/search.controller';
 import { IamController } from './controllers/iam.controller';
+import { OAuthController } from './controllers/oauth.controller';
 import { createAuthRouter } from './routes/auth.routes';
 import { createIamRouter } from './routes/iam.routes';
 import { createIngestionRouter } from './routes/ingestion.routes';
@@ -17,6 +18,7 @@ import { createDashboardRouter } from './routes/dashboard.routes';
 import { createUploadRouter } from './routes/upload.routes';
 import { createUserRouter } from './routes/user.routes';
 import { createSettingsRouter } from './routes/settings.routes';
+import { createOAuthRouter } from './routes/oauth.routes';
 import { apiKeyRoutes } from './routes/api-key.routes';
 import { integrityRoutes } from './routes/integrity.routes';
 import { createJobsRouter } from './routes/jobs.routes';
@@ -27,6 +29,7 @@ import { IamService } from '../services/IamService';
 import { StorageService } from '../services/StorageService';
 import { SearchService } from '../services/SearchService';
 import { SettingsService } from '../services/SettingsService';
+import { OAuthService } from '../services/OAuthService';
 import i18next from 'i18next';
 import FsBackend from 'i18next-fs-backend';
 import i18nextMiddleware from 'i18next-http-middleware';
@@ -70,6 +73,8 @@ export async function createServer(modules: ArchiverModule[] = []): Promise<Expr
 	const iamService = new IamService();
 	const iamController = new IamController(iamService);
 	const settingsService = new SettingsService();
+	const oauthService = new OAuthService();
+	const oauthController = new OAuthController(oauthService);
 
 	// --- i18next Initialization ---
 	const initializeI18next = async () => {
@@ -123,6 +128,7 @@ export async function createServer(modules: ArchiverModule[] = []): Promise<Expr
 	const apiKeyRouter = apiKeyRoutes(authService);
 	const integrityRouter = integrityRoutes(authService);
 	const jobsRouter = createJobsRouter(authService);
+	const oauthRouter = createOAuthRouter(oauthController);
 
 	// Middleware for all other routes
 	app.use((req, res, next) => {
@@ -142,6 +148,7 @@ export async function createServer(modules: ArchiverModule[] = []): Promise<Expr
 	app.use(i18nextMiddleware.handle(i18next));
 
 	app.use(`/${config.api.version}/auth`, authRouter);
+	app.use(`/${config.api.version}/auth`, oauthRouter);
 	app.use(`/${config.api.version}/iam`, iamRouter);
 	app.use(`/${config.api.version}/upload`, uploadRouter);
 	app.use(`/${config.api.version}/ingestion-sources`, ingestionRouter);

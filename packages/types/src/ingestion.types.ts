@@ -48,6 +48,9 @@ export interface GenericImapCredentials extends BaseIngestionCredentials {
 	allowInsecureCert: boolean;
 	username: string;
 	password?: string;
+	// OAuth2 support
+	useOAuth?: boolean;
+	oauthTokenId?: string; // Reference to oauth_tokens table
 }
 
 export interface GoogleWorkspaceCredentials extends BaseIngestionCredentials {
