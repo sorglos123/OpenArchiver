@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -25,6 +26,34 @@
 	let tokenToDelete = $state<string | null>(null);
 
 	onMount(async () => {
+		// Check for OAuth callback parameters
+		const params = new URLSearchParams(window.location.search);
+		const success = params.get('success');
+		const error = params.get('error');
+		const email = params.get('email');
+
+		if (success === 'true') {
+			setAlert({
+				type: 'success',
+				title: 'Success',
+				message: `Successfully connected ${email || 'your account'}`,
+				duration: 5000,
+				show: true
+			});
+			// Clean up URL
+			window.history.replaceState({}, '', window.location.pathname);
+		} else if (error) {
+			setAlert({
+				type: 'error',
+				title: 'Error',
+				message: decodeURIComponent(error),
+				duration: 5000,
+				show: true
+			});
+			// Clean up URL
+			window.history.replaceState({}, '', window.location.pathname);
+		}
+
 		await loadTokens();
 	});
 

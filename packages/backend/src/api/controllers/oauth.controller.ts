@@ -72,28 +72,32 @@ export class OAuthController {
 	 * Handle OAuth2 callback from Microsoft
 	 * GET /api/v1/auth/outlook/callback
 	 */
-	public handleOutlookCallback = async (req: Request, res: Response): Promise<Response> => {
+	public handleOutlookCallback = async (req: Request, res: Response): Promise<void> => {
 		try {
 			const { code, state, error, error_description } = req.query;
 
 			// Check for OAuth errors
 			if (error) {
 				logger.error({ error, error_description }, 'OAuth callback error');
-				return res.status(400).json({ 
-					message: 'OAuth authentication failed', 
-					error: error_description || error 
-				});
+				// Redirect to frontend with error
+				return res.redirect(
+					`${process.env.APP_URL}/dashboard/settings/oauth-accounts?error=${encodeURIComponent(error_description || error)}`
+				);
 			}
 
 			// Validate required parameters
 			if (!code || !state || typeof code !== 'string' || typeof state !== 'string') {
-				return res.status(400).json({ message: 'Invalid callback parameters' });
+				return res.redirect(
+					`${process.env.APP_URL}/dashboard/settings/oauth-accounts?error=Invalid+callback+parameters`
+				);
 			}
 
 			// Retrieve PKCE session data
 			const pkceSession = pkceSessionStore.get(state);
 			if (!pkceSession) {
-				return res.status(400).json({ message: 'Invalid or expired state parameter' });
+				return res.redirect(
+					`${process.env.APP_URL}/dashboard/settings/oauth-accounts?error=Invalid+or+expired+state+parameter`
+				);
 			}
 
 			// Clean up session data
@@ -101,7 +105,9 @@ export class OAuthController {
 
 			// Ensure user is authenticated
 			if (!req.user?.id) {
-				return res.status(401).json({ message: 'Unauthorized' });
+				return res.redirect(
+					`${process.env.APP_URL}/dashboard/settings/oauth-accounts?error=Unauthorized`
+				);
 			}
 
 			// Exchange authorization code for tokens
@@ -127,17 +133,15 @@ export class OAuthController {
 
 			logger.info({ userId: req.user.id, email: userEmail }, 'OAuth tokens stored successfully');
 
-			return res.json({
-				message: 'OAuth authentication successful',
-				tokenId: token.id,
-				email: userEmail,
-			});
+			// Redirect back to frontend with success
+			res.redirect(
+				`${process.env.APP_URL}/dashboard/settings/oauth-accounts?success=true&email=${encodeURIComponent(userEmail)}`
+			);
 		} catch (error: any) {
 			logger.error({ error }, 'Failed to handle OAuth callback');
-			return res.status(500).json({ 
-				message: 'Failed to complete OAuth authentication', 
-				error: error.message 
-			});
+			res.redirect(
+				`${process.env.APP_URL}/dashboard/settings/oauth-accounts?error=${encodeURIComponent(error.message || 'Failed to complete OAuth authentication')}`
+			);
 		}
 	};
 

@@ -128,7 +128,7 @@ export async function createServer(modules: ArchiverModule[] = []): Promise<Expr
 	const apiKeyRouter = apiKeyRoutes(authService);
 	const integrityRouter = integrityRoutes(authService);
 	const jobsRouter = createJobsRouter(authService);
-	const oauthRouter = createOAuthRouter(oauthController);
+	const oauthRouter = createOAuthRouter(oauthController, authService);
 
 	// Middleware for all other routes
 	app.use((req, res, next) => {
