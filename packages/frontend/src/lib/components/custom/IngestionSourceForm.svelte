@@ -212,14 +212,27 @@
 			<Input id="username" bind:value={formData.providerConfig.username} class="col-span-3" />
 		</div>
 		<div class="grid grid-cols-4 items-center gap-4">
-			<Label for="password" class="text-left">{$t('app.auth.password')}</Label>
-			<Input
-				id="password"
-				type="password"
-				bind:value={formData.providerConfig.password}
-				class="col-span-3"
-			/>
+			<Label for="useOAuth" class="text-left">Use OAuth2</Label>
+			<Checkbox id="useOAuth" bind:checked={formData.providerConfig.useOAuth} />
 		</div>
+		{#if !formData.providerConfig.useOAuth}
+			<div class="grid grid-cols-4 items-center gap-4">
+				<Label for="password" class="text-left">{$t('app.auth.password')}</Label>
+				<Input
+					id="password"
+					type="password"
+					bind:value={formData.providerConfig.password}
+					class="col-span-3"
+				/>
+			</div>
+		{:else}
+			<div class="grid grid-cols-4 items-center gap-4">
+				<Label class="text-left">OAuth Token</Label>
+				<div class="col-span-3 text-sm text-muted-foreground">
+					Connect your account via Settings → OAuth Accounts before configuring this ingestion source.
+				</div>
+			</div>
+		{/if}
 		<div class="grid grid-cols-4 items-center gap-4">
 			<Label for="secure" class="text-left"
 				>{$t('app.components.ingestion_source_form.use_tls')}</Label

@@ -112,6 +112,46 @@ After deploying the application, you will need to configure one or more ingestio
 - [Connecting to Microsoft 365](https://docs.openarchiver.com/user-guides/email-providers/imap.html)
 - [Connecting to a Generic IMAP Server](https://docs.openarchiver.com/user-guides/email-providers/imap.html)
 
+### 🔐 OAuth2 Authentication for Microsoft Outlook/Hotmail
+
+Open Archiver supports OAuth2 authentication for seamless and secure connection to Microsoft email accounts (Outlook/Hotmail) via IMAP/SMTP.
+
+#### Setting up OAuth2:
+
+1. **Register your application** at [Azure Portal](https://portal.azure.com/):
+   - Navigate to "Azure Active Directory" → "App registrations" → "New registration"
+   - Set a name for your application
+   - Set the redirect URI to: `http://localhost:3000/auth/outlook/callback` (or your domain)
+   - Note the **Application (client) ID**
+
+2. **Configure API permissions**:
+   - Go to "API permissions" → "Add a permission"
+   - Select "Microsoft Graph" → "Delegated permissions"
+   - Add the following permissions:
+     - `IMAP.AccessAsUser.All`
+     - `SMTP.Send`
+     - `offline_access`
+     - `openid`
+     - `profile`
+     - `email`
+
+3. **Update your `.env` file**:
+   ```bash
+   MS_CLIENT_ID=your-application-client-id
+   MS_REDIRECT_URI=http://localhost:3000/auth/outlook/callback
+   ```
+
+4. **Connect your account**:
+   - Navigate to "Settings" → "OAuth Accounts" in the Open Archiver dashboard
+   - Click "Sign in with Microsoft"
+   - Authorize the application
+
+5. **Create an IMAP ingestion source**:
+   - When creating a new Generic IMAP ingestion source, check "Use OAuth2"
+   - Your connected OAuth account will be used for authentication
+
+**Note**: OAuth2 tokens are securely encrypted and stored in the database. They are automatically refreshed when expired.
+
 ## 🤝 Contributing
 
 We welcome contributions from the community!

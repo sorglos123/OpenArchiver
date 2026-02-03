@@ -68,6 +68,10 @@
 					href: '/dashboard/settings/account',
 					label: $t('app.layout.account'),
 				},
+				{
+					href: '/dashboard/settings/oauth-accounts',
+					label: 'OAuth Accounts',
+				},
 			],
 			position: 5,
 		},
