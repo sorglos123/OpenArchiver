@@ -7,6 +7,7 @@ Choose your provider from the list below to get started:
 - [Google Workspace](./google-workspace.md)
 - [Microsoft 365](./microsoft-365.md)
 - [Generic IMAP Server](./imap.md)
+- [OAuth2 Authentication](./oauth2.md) - Secure authentication for Microsoft Outlook/Hotmail
 - [EML Import](./eml.md)
 - [PST Import](./pst.md)
 - [Mbox Import](./mbox.md)
