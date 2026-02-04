@@ -104,6 +104,27 @@ Open Archiver is built on a modern, scalable, and maintainable technology stack:
 4.  **Access the application:**
     Once the services are running, you can access the Open Archiver web interface by navigating to `http://localhost:3000` in your web browser.
 
+## 🛠️ Development Setup
+
+For contributors and developers wanting to test features or make changes:
+
+**Quick Start for Development:**
+```bash
+# Install dependencies
+pnpm install
+
+# Start infrastructure (Postgres, Redis, Meilisearch)
+docker compose -f docker-compose.dev.yml up -d
+
+# Run database migrations
+pnpm db:migrate:dev
+
+# Start development servers (backend + frontend + workers)
+pnpm dev:oss
+```
+
+📖 **Full development guide with OAuth2 testing**: See [DEV_SETUP.md](./DEV_SETUP.md)
+
 ## ⚙️ Data Source Configuration
 
 After deploying the application, you will need to configure one or more ingestion sources to begin archiving emails. Follow our detailed guides to connect to your email provider:

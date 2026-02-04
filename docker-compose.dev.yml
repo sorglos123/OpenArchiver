@@ -1,0 +1,67 @@
+version: '3.8'
+
+# Development docker-compose for infrastructure services only
+# This allows running the application locally while using Docker for databases
+# Use: docker compose -f docker-compose.dev.yml up -d
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres-dev
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-open_archive}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+    networks:
+      - open-archiver-dev-net
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: valkey-dev
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: valkey-server --requirepass ${REDIS_PASSWORD:-defaultredispassword}
+    volumes:
+      - valkeydata-dev:/data
+    networks:
+      - open-archiver-dev-net
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.15
+    container_name: meilisearch-dev
+    restart: unless-stopped
+    ports:
+      - '7700:7700'
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-aSampleMasterKey}
+    volumes:
+      - meilidata-dev:/meili_data
+    networks:
+      - open-archiver-dev-net
+
+  tika:
+    image: apache/tika:3.2.2.0-full
+    container_name: tika-dev
+    restart: unless-stopped
+    ports:
+      - '9998:9998'
+    networks:
+      - open-archiver-dev-net
+
+volumes:
+  pgdata-dev:
+    driver: local
+  valkeydata-dev:
+    driver: local
+  meilidata-dev:
+    driver: local
+
+networks:
+  open-archiver-dev-net:
+    driver: bridge
