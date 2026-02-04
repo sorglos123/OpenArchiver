@@ -13,8 +13,19 @@ import { logger } from '../config/logger';
 import { CryptoService } from './CryptoService';
 
 /**
+ * Microsoft's public OAuth client ID used by Thunderbird and other email clients.
+ * This allows users to authenticate without registering their own Azure application.
+ * 
+ * Users can override this by setting MS_CLIENT_ID environment variable for custom applications.
+ */
+const MICROSOFT_PUBLIC_CLIENT_ID = '9e5f94bc-e8a4-4e73-b8be-63364c29d753';
+
+/**
  * Service for managing OAuth2 authentication flows and token management.
  * Supports PKCE (Proof Key for Code Exchange) for enhanced security.
+ * 
+ * By default, uses Microsoft's public client ID for seamless authentication.
+ * Custom client IDs can be configured via MS_CLIENT_ID environment variable.
  */
 export class OAuthService {
 	private cryptoService: CryptoService;
@@ -51,19 +62,26 @@ export class OAuthService {
 	}
 
 	/**
-	 * Get OAuth provider configuration for Microsoft
+	 * Get OAuth provider configuration for Microsoft.
+	 * 
+	 * Uses Microsoft's public client ID by default (same as Thunderbird),
+	 * allowing users to authenticate without registering an Azure application.
+	 * 
+	 * Custom client IDs can be provided via MS_CLIENT_ID environment variable
+	 * for organizations requiring their own registered applications.
 	 */
 	getMicrosoftConfig(): OAuthProviderConfig {
-		const clientId = process.env.MS_CLIENT_ID;
-		const redirectUri = process.env.MS_REDIRECT_URI;
+		// Use public client ID by default, allow override via environment variable
+		const clientId = process.env.MS_CLIENT_ID || MICROSOFT_PUBLIC_CLIENT_ID;
+		
+		// Default redirect URI for local development, can be overridden
+		const redirectUri = process.env.MS_REDIRECT_URI || 
+			`${process.env.APP_URL || 'http://localhost:3000'}/api/v1/auth/outlook/callback`.replace(':3000', ':4000');
 
-		if (!clientId) {
-			throw new Error('MS_CLIENT_ID environment variable is not set');
-		}
-
-		if (!redirectUri) {
-			throw new Error('MS_REDIRECT_URI environment variable is not set');
-		}
+		logger.info({ 
+			usingPublicClient: !process.env.MS_CLIENT_ID,
+			clientId: clientId.substring(0, 8) + '...' 
+		}, 'OAuth configuration loaded');
 
 		return {
 			clientId,

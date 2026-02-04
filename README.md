@@ -137,42 +137,37 @@ After deploying the application, you will need to configure one or more ingestio
 
 Open Archiver supports OAuth2 authentication for seamless and secure connection to Microsoft email accounts (Outlook/Hotmail) via IMAP/SMTP.
 
-#### Setting up OAuth2:
+**No Azure Portal registration required!** Open Archiver uses Microsoft's public OAuth client (same as Thunderbird), allowing you to authenticate immediately without any setup.
 
-1. **Register your application** at [Azure Portal](https://portal.azure.com/):
-   - Navigate to "Azure Active Directory" → "App registrations" → "New registration"
-   - Set a name for your application
-   - Set the redirect URI to: `http://localhost:4000/api/v1/auth/outlook/callback` (or your domain with the correct backend port and path)
-   - Note the **Application (client) ID**
+#### Quick OAuth2 Setup:
 
-2. **Configure API permissions**:
-   - Go to "API permissions" → "Add a permission"
-   - Select "Microsoft Graph" → "Delegated permissions"
-   - Add the following permissions:
-     - `IMAP.AccessAsUser.All`
-     - `SMTP.Send`
-     - `offline_access`
-     - `openid`
-     - `profile`
-     - `email`
+1. **Navigate to Settings** → **OAuth Accounts** in the Open Archiver dashboard
 
-3. **Update your `.env` file**:
-   ```bash
-   MS_CLIENT_ID=your-application-client-id
-   MS_REDIRECT_URI=http://localhost:4000/api/v1/auth/outlook/callback
-   ```
-   Note: The redirect URI must match exactly what you configured in Azure Portal, including the full path `/api/v1/auth/outlook/callback`.
+2. **Click "Sign in with Microsoft"** and authorize the application
 
-4. **Connect your account**:
-   - Navigate to "Settings" → "OAuth Accounts" in the Open Archiver dashboard
-   - Click "Sign in with Microsoft"
-   - Authorize the application
-
-5. **Create an IMAP ingestion source**:
+3. **Create an IMAP ingestion source**:
    - When creating a new Generic IMAP ingestion source, check "Use OAuth2"
    - Your connected OAuth account will be used for authentication
 
 **Note**: OAuth2 tokens are securely encrypted and stored in the database. They are automatically refreshed when expired.
+
+#### Advanced: Custom Azure Application (Optional)
+
+For organizations requiring their own registered Azure application:
+
+1. **Register your application** at [Azure Portal](https://portal.azure.com/):
+   - Navigate to "Azure Active Directory" → "App registrations" → "New registration"
+   - Set redirect URI: `http://your-domain:4000/api/v1/auth/outlook/callback`
+   - Note the **Application (client) ID**
+
+2. **Configure API permissions**:
+   - Add required permissions: `IMAP.AccessAsUser.All`, `SMTP.Send`, `offline_access`, `openid`, `profile`, `email`
+
+3. **Update your `.env` file**:
+   ```bash
+   MS_CLIENT_ID=your-application-client-id
+   MS_REDIRECT_URI=http://your-domain:4000/api/v1/auth/outlook/callback
+   ```
 
 ## 🤝 Contributing
 

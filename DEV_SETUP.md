@@ -130,9 +130,11 @@ MEILI_MASTER_KEY=aSampleMasterKey
 # Tika - point to local Docker
 TIKA_URL=http://localhost:9998
 
-# OAuth2 Configuration (REQUIRED for testing OAuth)
-MS_CLIENT_ID=your-azure-app-client-id-here
-MS_REDIRECT_URI=http://localhost:4000/api/v1/auth/outlook/callback
+# OAuth2 Configuration (OPTIONAL - uses public client by default)
+# Open Archiver uses Microsoft's public OAuth client (same as Thunderbird).
+# You only need to set these if you want to use a custom Azure application:
+# MS_CLIENT_ID=your-custom-client-id
+# MS_REDIRECT_URI=http://localhost:4000/api/v1/auth/outlook/callback
 
 # Storage
 STORAGE_LOCAL_ROOT_PATH=/tmp/open-archiver-dev
@@ -188,9 +190,20 @@ pnpm dev:oss
 - **Backend API**: http://localhost:4000
 - **API Health Check**: http://localhost:4000
 
-### Step 8: Set Up OAuth2 (Azure Portal)
+### Step 8: Test OAuth2 Integration
 
-Before testing OAuth, you need to register an app in Azure:
+OAuth2 works out of the box using Microsoft's public client (same as Thunderbird). No Azure Portal setup required!
+
+1. Create an admin account (first time setup)
+2. Navigate to **Settings** → **OAuth Accounts**
+3. Click **Sign in with Microsoft**
+4. Complete the Microsoft OAuth flow
+5. Your account should appear in the connected accounts list
+6. Create an IMAP ingestion source with **Use OAuth2** enabled
+
+### Step 8b: Advanced - Custom Azure Application (Optional)
+
+If you need a custom Azure application for your organization:
 
 1. Go to [Azure Portal](https://portal.azure.com/)
 2. Navigate to **Azure Active Directory** → **App registrations** → **New registration**
@@ -200,16 +213,12 @@ Before testing OAuth, you need to register an app in Azure:
    - `SMTP.Send`
    - `offline_access`
    - `openid`, `profile`, `email`
-5. Copy the **Application (client) ID** to your `.env` file as `MS_CLIENT_ID`
-
-### Step 9: Test OAuth2 Integration
-
-1. Create an admin account (first time setup)
-2. Navigate to **Settings** → **OAuth Accounts**
-3. Click **Sign in with Microsoft**
-4. Complete the Microsoft OAuth flow
-5. Your account should appear in the connected accounts list
-6. Create an IMAP ingestion source with **Use OAuth2** enabled
+5. Add to your `.env` file:
+   ```bash
+   MS_CLIENT_ID=your-application-client-id
+   MS_REDIRECT_URI=http://localhost:4000/api/v1/auth/outlook/callback
+   ```
+6. Restart the dev server
 
 ---
 
@@ -309,11 +318,14 @@ networks:
 cp .env.example .env
 ```
 
-Edit `.env` and add OAuth configuration:
+Edit `.env` and add OAuth configuration (optional - uses public client by default):
 
 ```bash
-MS_CLIENT_ID=your-azure-app-client-id
-MS_REDIRECT_URI=http://localhost:4000/api/v1/auth/outlook/callback
+# Only needed for custom Azure applications
+# MS_CLIENT_ID=your-azure-app-client-id
+# MS_REDIRECT_URI=http://localhost:4000/api/v1/auth/outlook/callback
+
+# Required: Generate encryption key
 ENCRYPTION_KEY=$(openssl rand -hex 32)
 ```
 

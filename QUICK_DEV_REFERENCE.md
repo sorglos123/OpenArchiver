@@ -76,21 +76,21 @@ pnpm db:migrate:dev
 
 ## Testing OAuth2
 
-1. **Set up Azure app** (one-time):
-   - Register at https://portal.azure.com/
-   - Add redirect URI: `http://localhost:4000/api/v1/auth/outlook/callback`
-   - Copy Client ID to `.env` as `MS_CLIENT_ID`
+**No Azure Portal setup required!** OAuth2 works out of the box using Microsoft's public client.
 
-2. **Configure `.env`**:
-   ```bash
-   MS_CLIENT_ID=your-client-id
-   MS_REDIRECT_URI=http://localhost:4000/api/v1/auth/outlook/callback
-   ENCRYPTION_KEY=$(openssl rand -hex 32)
-   ```
-
-3. **Test in UI**:
+1. **Test in UI**:
    - Settings → OAuth Accounts → Sign in with Microsoft
    - Archive → Ingestions → Add Generic IMAP with OAuth2
+
+2. **Optional: Custom Azure app** (for organizations):
+   ```bash
+   # Add to .env only if you need a custom application
+   MS_CLIENT_ID=your-client-id
+   MS_REDIRECT_URI=http://localhost:4000/api/v1/auth/outlook/callback
+   ```
+   - Register at https://portal.azure.com/
+   - Add redirect URI: `http://localhost:4000/api/v1/auth/outlook/callback`
+   - Copy Client ID to `.env`
 
 ## Troubleshooting
 
@@ -139,13 +139,18 @@ packages/
 
 ## Environment Variables (OAuth2)
 
-Required for OAuth functionality:
+OAuth2 works with default settings (public client). Optional for custom applications:
 
 ```bash
-MS_CLIENT_ID=               # Azure app client ID
-MS_REDIRECT_URI=            # Callback URL
-ENCRYPTION_KEY=             # 32-byte hex (openssl rand -hex 32)
+MS_CLIENT_ID=               # Optional: Custom Azure app client ID (uses public client if not set)
+MS_REDIRECT_URI=            # Optional: Custom callback URL (auto-generated if not set)
+ENCRYPTION_KEY=             # Required: 32-byte hex (openssl rand -hex 32)
 ```
+
+Default behavior:
+- Uses Microsoft's public OAuth client (9e5f94bc-e8a4-4e73-b8be-63364c29d753)
+- Auto-generates redirect URI from APP_URL
+- No Azure Portal registration needed
 
 ## Resources
 

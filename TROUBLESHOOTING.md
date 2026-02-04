@@ -2,27 +2,28 @@
 
 Common issues when developing/testing the OAuth2 integration and their solutions.
 
+**Note**: OAuth2 now works out of the box using Microsoft's public client (same as Thunderbird). You don't need to register an Azure application unless you want a custom client ID for your organization.
+
 ## Setup Issues
 
-### ❌ "MS_CLIENT_ID environment variable is not set"
+### ℹ️ "Using public OAuth client" in logs
 
-**Symptom**: Error when clicking "Sign in with Microsoft" or starting OAuth flow.
+**This is normal!** If you see this in the logs, OAuth2 is using the default public client ID.
 
-**Cause**: Missing Azure application configuration.
+**No action needed** - This is the expected behavior unless you've configured a custom MS_CLIENT_ID.
+
+### ❌ "MS_CLIENT_ID environment variable is not set" (OUTDATED)
+
+**This error should no longer occur** with the updated implementation. If you see it:
+
+**Cause**: Old code or cached build.
 
 **Solution**:
-1. Register application at [Azure Portal](https://portal.azure.com/)
-2. Add `MS_CLIENT_ID` to your `.env` file:
-   ```bash
-   MS_CLIENT_ID=your-application-client-id-here
-   ```
-3. Restart your development server
+1. Pull latest changes from the branch
+2. Rebuild: `pnpm build`
+3. Restart dev server
 
-**Quick Test**:
-```bash
-grep MS_CLIENT_ID .env
-# Should show: MS_CLIENT_ID=abc123...
-```
+The new implementation uses a public client ID by default.
 
 ---
 
@@ -98,9 +99,15 @@ docker exec -it postgres-dev psql -U admin -d open_archive \
 
 **Symptom**: After Microsoft login, get error about redirect URI mismatch.
 
-**Cause**: Mismatch between Azure Portal configuration and `.env` file.
+**Cause**: When using a **custom client ID**, the redirect URI must match Azure Portal configuration.
 
-**Solution**:
+**Solution for Public Client (Default)**:
+The public client works with any redirect URI. If you see this error:
+1. You're likely using a custom MS_CLIENT_ID
+2. Check your Azure Portal configuration matches your redirect URI
+3. Or remove MS_CLIENT_ID from .env to use the public client
+
+**Solution for Custom Client ID**:
 1. Check your `.env`:
    ```bash
    MS_REDIRECT_URI=http://localhost:4000/api/v1/auth/outlook/callback
@@ -120,6 +127,8 @@ docker exec -it postgres-dev psql -U admin -d open_archive \
 - Missing `/api/v1` prefix
 - Using HTTPS locally (use HTTP for localhost)
 - Trailing slash: `/callback/` vs `/callback`
+
+**Recommended**: Remove MS_CLIENT_ID and use the public client to avoid these issues.
 
 ---
 

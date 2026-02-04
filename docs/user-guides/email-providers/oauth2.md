@@ -1,81 +1,32 @@
 # OAuth2 Authentication for Email Accounts
 
-Open Archiver supports OAuth2 authentication for secure and seamless connection to Microsoft email accounts (Outlook/Hotmail) via IMAP/SMTP. This guide explains how to set up and use OAuth2 authentication.
+Open Archiver supports OAuth2 authentication for secure and seamless connection to Microsoft email accounts (Outlook/Hotmail) via IMAP/SMTP. 
+
+**No Azure Portal registration required!** Open Archiver uses Microsoft's public OAuth client ID by default (the same approach used by Thunderbird), allowing you to authenticate immediately without any setup.
 
 ## Overview
 
 OAuth2 provides a more secure authentication method compared to traditional username/password authentication:
 
 - **No password storage**: Your email password is never stored in Open Archiver
+- **No Azure setup needed**: Works out of the box with Microsoft's public client
 - **Granular permissions**: You control what access the application has
 - **Automatic token refresh**: Access tokens are automatically refreshed when they expire
 - **Revocable access**: You can revoke access at any time from your Microsoft account settings
 
 ## Prerequisites
 
-Before setting up OAuth2 authentication:
+Before using OAuth2 authentication:
 
-1. You must have an Azure account (free tier is sufficient)
-2. Administrative access to register applications in Azure Portal
-3. A deployed instance of Open Archiver with environment variables configured
+1. A deployed instance of Open Archiver
+2. A Microsoft email account (Outlook, Hotmail, or Office 365)
+3. That's it! No Azure Portal registration needed.
 
-## Setting Up OAuth2 for Microsoft Outlook/Hotmail
+## Quick Start - Using Public OAuth Client (Recommended)
 
-### Step 1: Register Your Application in Azure
+This is the simplest approach and works for most users:
 
-1. Navigate to [Azure Portal](https://portal.azure.com/)
-
-2. Go to **Azure Active Directory** → **App registrations** → **New registration**
-
-3. Fill in the application details:
-   - **Name**: Choose a descriptive name (e.g., "Open Archiver OAuth")
-   - **Supported account types**: Select "Accounts in any organizational directory and personal Microsoft accounts"
-   - **Redirect URI**: 
-     - Type: Web
-     - URI: `http://your-domain:4000/api/v1/auth/outlook/callback`
-     - For local development: `http://localhost:4000/api/v1/auth/outlook/callback`
-
-4. Click **Register**
-
-5. Note down the **Application (client) ID** - you'll need this later
-
-### Step 2: Configure API Permissions
-
-1. In your app registration, navigate to **API permissions** in the left sidebar
-
-2. Click **Add a permission** → **Microsoft Graph** → **Delegated permissions**
-
-3. Add the following permissions:
-   - `IMAP.AccessAsUser.All` - Access IMAP as the user
-   - `SMTP.Send` - Send mail as the user
-   - `offline_access` - Maintain access to data you have given it access to
-   - `openid` - Sign users in
-   - `profile` - View users' basic profile
-   - `email` - View users' email address
-
-4. Click **Add permissions**
-
-5. **Important**: Click **Grant admin consent for [Your Organization]** if you're setting this up for organizational use
-
-### Step 3: Configure Open Archiver
-
-1. Update your `.env` file with the OAuth2 configuration:
-
-```bash
-# OAuth2 Configuration
-MS_CLIENT_ID=your-application-client-id-from-step-1
-MS_REDIRECT_URI=http://your-domain:4000/api/v1/auth/outlook/callback
-```
-
-2. Restart your Open Archiver instance to apply the changes:
-
-```bash
-docker compose restart
-```
-
-## Using OAuth2 Authentication
-
-### Connect Your Email Account
+### Step 1: Connect Your Email Account
 
 1. Log in to Open Archiver
 
@@ -90,7 +41,7 @@ docker compose restart
 
 5. Your account will now appear in the connected accounts list
 
-### Create an IMAP Ingestion Source with OAuth2
+### Step 2: Create an IMAP Ingestion Source with OAuth2
 
 1. Navigate to **Archive** → **Ingestions**
 
@@ -108,6 +59,66 @@ docker compose restart
 4. Click **Create**
 
 5. The ingestion source will use your connected OAuth token for authentication
+
+---
+
+## Advanced - Custom Azure Application (Optional)
+
+For organizations that require their own registered Azure application (e.g., for custom branding or additional controls):
+
+### When You Might Need a Custom Application:
+
+- You want custom branding in the OAuth consent screen
+- Your organization requires all applications to be registered
+- You need additional API permissions beyond IMAP/SMTP
+- You want more control over the OAuth flow
+
+### Setting Up a Custom Application:
+
+### Setting Up a Custom Application:
+
+1. **Register Your Application in Azure**:
+   - Navigate to [Azure Portal](https://portal.azure.com/)
+   - Go to **Azure Active Directory** → **App registrations** → **New registration**
+   - Fill in the application details:
+     - **Name**: Choose a descriptive name (e.g., "Open Archiver OAuth")
+     - **Supported account types**: Select "Accounts in any organizational directory and personal Microsoft accounts"
+     - **Redirect URI**: 
+       - Type: Web
+       - URI: `http://your-domain:4000/api/v1/auth/outlook/callback`
+       - For local development: `http://localhost:4000/api/v1/auth/outlook/callback`
+   - Click **Register**
+   - Note down the **Application (client) ID**
+
+2. **Configure API Permissions**:
+   - In your app registration, navigate to **API permissions**
+   - Click **Add a permission** → **APIs my organization uses** → Search for "Office 365 Exchange Online"
+   - Select **Delegated permissions**
+   - Add the following permissions:
+     - `IMAP.AccessAsUser.All` - Access IMAP as the user
+     - `SMTP.Send` - Send mail as the user
+   - Also add these Microsoft Graph permissions:
+     - `offline_access` - Maintain access to data you have given it access to
+     - `openid` - Sign users in
+     - `profile` - View users' basic profile
+     - `email` - View users' email address
+   - Click **Add permissions**
+   - **Important**: Click **Grant admin consent** if setting up for organizational use
+
+3. **Configure Open Archiver**:
+
+   Update your `.env` file with the custom client ID:
+
+   ```bash
+   MS_CLIENT_ID=your-application-client-id-from-azure
+   MS_REDIRECT_URI=http://your-domain:4000/api/v1/auth/outlook/callback
+   ```
+
+4. **Restart Open Archiver** to apply the changes
+
+5. **Connect Your Account**: Follow the Quick Start steps above
+
+---
 
 ## Token Management
 
@@ -140,8 +151,46 @@ To disconnect an OAuth account:
 This will remove the token from Open Archiver. To also revoke the application's access:
 
 1. Go to [Microsoft Account Security](https://account.microsoft.com/privacy/app-permissions)
-2. Find "Open Archiver OAuth" (or your app name)
+2. Find the application (default: "Open Archiver" or your custom app name)
 3. Click **Remove these permissions**
+
+---
+
+## Public Client vs Custom Application
+
+### Public Client (Default)
+
+**What it is**: Uses Microsoft's public OAuth client ID (`9e5f94bc-e8a4-4e73-b8be-63364c29d753`), the same one used by Thunderbird and other email clients.
+
+**Advantages**:
+- ✅ No Azure Portal registration needed
+- ✅ Works immediately out of the box
+- ✅ No configuration required
+- ✅ Simpler for users
+
+**Limitations**:
+- ⚠️ Generic "Open Archiver" branding in consent screen
+- ⚠️ Cannot customize permissions beyond defaults
+- ⚠️ Shared with other applications using the same client ID
+
+### Custom Application
+
+**What it is**: Your own registered Azure application with custom client ID.
+
+**Advantages**:
+- ✅ Custom branding in OAuth consent screen
+- ✅ Full control over permissions
+- ✅ Better for enterprise deployments
+- ✅ Separate from other applications
+
+**Disadvantages**:
+- ⚠️ Requires Azure Portal registration
+- ⚠️ More complex setup
+- ⚠️ May require admin consent for organizational use
+
+**Recommendation**: Start with the public client. Switch to a custom application only if you need the additional control.
+
+---
 
 ## Security Considerations
 
